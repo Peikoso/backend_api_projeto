@@ -13,27 +13,15 @@ from backend_fastapi.security import create_access_token, get_current_user, get_
 router = APIRouter()
 
 
-@router.get('/', response_model=list[UsuarioResponse])
-async def get_usuarios(db: AsyncSession = Depends(get_session)):
-    query = text('SELECT id_user, nome, email, login FROM usuario')
-    result = await db.execute(query)
-    raw_users = result.fetchall()
-    return [UsuarioResponse.model_validate(user._mapping) for user in raw_users]
-
-
-@router.get('/{id_user}', response_model=UsuarioResponse)
-async def get_usuario_by_id(id_user: int, db: AsyncSession = Depends(get_session)):
+@router.get('/', response_model=UsuarioResponse)
+async def get_usuarios(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     query = text('SELECT id_user, nome, email, login FROM usuario WHERE id_user = :id_user')
-    result = await db.execute(query.bindparams(id_user=id_user))
-    raw_usuario = result.fetchone()
-
-    if not raw_usuario:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Usuario não encontrado')
-
-    return UsuarioResponse.model_validate(raw_usuario._mapping)
+    result = await db.execute(query.bindparams(id_user=current_user.id_user))
+    raw_user = result.fetchone()
+    return UsuarioResponse.model_validate(raw_user._mapping)
 
 
-@router.post('/', status_code=HTTPStatus.CREATED)
+@router.post('/Cadastro', status_code=HTTPStatus.CREATED)
 async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_session), token: str = Depends(optional_oauth2_scheme)):
     if token:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail='Usuários autenticados não podem criar nova conta.')
@@ -53,12 +41,14 @@ async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
 
         return {'Message': 'Usuario criado', 'id_user': result.scalar()}
 
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail='email ou login já existe')
-
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=500, detail=f'Erro ao criar usuário: {str(e)}')
+    except IntegrityError as e:
+        if 'usuario_login_key' in str(e.orig) or 'usuario_email_key' in str(e.orig):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="Este login ou e-mail já está em uso. Escolha um diferente."
+            )
+        else:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Erro de integridade no banco de dados.")
 
 
 @router.put('/', response_model=UsuarioResponse)
@@ -82,9 +72,15 @@ async def update_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
         await db.commit()
 
         return UsuarioResponse.model_validate(raw_usuario._mapping)
-
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail='email ou login já existe')
+    
+    except IntegrityError as e:
+        if 'usuario_login_key' in str(e.orig) or 'usuario_email_key' in str(e.orig):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="Este login ou e-mail já está em uso. Escolha um diferente."
+            )
+        else:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Erro de integridade no banco de dados.")
 
 
 @router.delete('/', status_code=HTTPStatus.OK)

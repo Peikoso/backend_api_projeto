@@ -12,18 +12,18 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[PatrimonioResponse])
-async def get_patrimonio(db: AsyncSession = Depends(get_session)):
-    query = text('SELECT * FROM patrimonio')
-    result = await db.execute(query)
+async def get_patrimonio(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+    query = text('SELECT * FROM patrimonio WHERE id_user = :id_user')
+    result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_patrimonio = result.fetchall()
 
     return [PatrimonioResponse.model_validate(patrimonio._mapping) for patrimonio in raw_patrimonio]
 
 
 @router.get('/{idbem}', response_model=PatrimonioResponse)
-async def get_patrimonio_idbem(idbem: int, db: AsyncSession = Depends(get_session)):
+async def get_patrimonio_idbem(idbem: int, db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
     query = text('SELECT * FROM patrimonio WHERE idbem = :idbem')
-    result = await db.execute(query.bindparams(idbem=idbem))
+    result = await db.execute(query.bindparams(idbem=idbem, id_user=current_user.id_user))
     raw_patrimonio = result.fetchone()
 
     if not raw_patrimonio:
