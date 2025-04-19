@@ -122,6 +122,3 @@ async def delete_orcamentoMensal(id_orcamento: int, db: AsyncSession = Depends(g
 
     await db.commit()
     return {'message': f'Orçamento Mensal com ID: {id_orcamento} deletado'}
-
-
-# @router.get('/')

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend_fastapi.router.dividasRouter import router as divida_router
+from backend_fastapi.router.gastoRouter import router as gasto_router
 from backend_fastapi.router.investimentoRouter import router as investimento_router
 from backend_fastapi.router.metaRouter import router as meta_router
 from backend_fastapi.router.movimentacaoRouter import router as movimentacao_router
@@ -11,8 +12,6 @@ from backend_fastapi.router.orcamentoMensalRouter import router as orcamentoMens
 from backend_fastapi.router.patrimonioRouter import router as patrimonio_router
 from backend_fastapi.router.resumoFinanceiroRouter import router as resumo_financeiro_router
 from backend_fastapi.router.usuarioRouter import router as usuario_router
-from backend_fastapi.router.gastoRouter import router as gasto_router
-
 
 app = FastAPI()
 

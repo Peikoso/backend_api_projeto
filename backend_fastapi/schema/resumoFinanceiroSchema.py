@@ -16,4 +16,3 @@ class resumoFinanceiroOutrosResponse(BaseModel):
     total_investido_final: float
     total_proventos: float
     total_dividas: float
-

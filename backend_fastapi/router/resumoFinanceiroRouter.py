@@ -11,10 +11,8 @@ from backend_fastapi.security import get_current_user
 router = APIRouter()
 
 
-
-
 @router.get('/', response_model=list[resumoFinanceiroMensalResponse])
-async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text(
         """
         SELECT mes, ano, total_movimentacoes, total_receitas, total_despesas, saldo
@@ -22,13 +20,12 @@ async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), curre
         WHERE id_user = :id_user
         """
     )
-    
+
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_resumos = result.fetchall()
-    
+
     return [resumoFinanceiroMensalResponse.model_validate(resumo._mapping) for resumo in raw_resumos]
 
-    
 
 @router.get('/Mensal', response_model=resumoFinanceiroMensalResponse)
 async def get_resumo_financeiro_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):

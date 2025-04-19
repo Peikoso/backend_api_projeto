@@ -9,7 +9,7 @@ class GastoMensalResponse(BaseModel):
     categoria_despesa: CategoriaDespesaEnum
     total_gasto: float
     percentual: float
-    
+
 
 class GastoMensalComparativo(BaseModel):
     ano: int
@@ -19,5 +19,3 @@ class GastoMensalComparativo(BaseModel):
     gasto_real: float
     diferenca: float
     percentual_gasto: float
-    
-    
