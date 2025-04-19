@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=UsuarioResponse)
-async def get_usuarios(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT id_user, nome, email, login FROM usuario WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_user = result.fetchone()
@@ -43,12 +43,9 @@ async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
 
     except IntegrityError as e:
         if 'usuario_login_key' in str(e.orig) or 'usuario_email_key' in str(e.orig):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail="Este login ou e-mail já está em uso. Escolha um diferente."
-            )
-        else:
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Erro de integridade no banco de dados.")
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Este login ou e-mail já está em uso. Escolha um diferente.')
+
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
 
 @router.put('/', response_model=UsuarioResponse)
@@ -72,15 +69,12 @@ async def update_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
         await db.commit()
 
         return UsuarioResponse.model_validate(raw_usuario._mapping)
-    
+
     except IntegrityError as e:
         if 'usuario_login_key' in str(e.orig) or 'usuario_email_key' in str(e.orig):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail="Este login ou e-mail já está em uso. Escolha um diferente."
-            )
-        else:
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Erro de integridade no banco de dados.")
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Este login ou e-mail já está em uso. Escolha um diferente.')
+
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
 
 @router.delete('/', status_code=HTTPStatus.OK)

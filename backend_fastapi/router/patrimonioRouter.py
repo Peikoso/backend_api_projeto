@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[PatrimonioResponse])
-async def get_patrimonio(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_patrimonio(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM patrimonio WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_patrimonio = result.fetchall()
@@ -21,7 +21,7 @@ async def get_patrimonio(db: AsyncSession = Depends(get_session), current_user =
 
 
 @router.get('/{idbem}', response_model=PatrimonioResponse)
-async def get_patrimonio_idbem(idbem: int, db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_patrimonio_idbem(idbem: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM patrimonio WHERE idbem = :idbem')
     result = await db.execute(query.bindparams(idbem=idbem, id_user=current_user.id_user))
     raw_patrimonio = result.fetchone()

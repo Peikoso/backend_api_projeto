@@ -1,8 +1,8 @@
 from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
-from fastapi import UploadFile
-from backend_fastapi.schema.Enums import CategoriaDespesaEnum, CategoriaReceitaEnum, TipoMovimentacaoEnum
+
+from backend_fastapi.schema.enums import CategoriaDespesaEnum, CategoriaReceitaEnum, TipoMovimentacaoEnum
 
 
 class MovimentacaoBase(BaseModel):
@@ -19,15 +19,15 @@ class MovimentacaoBase(BaseModel):
         tipo_mov = values.tipo_mov
         categoria_receita = values.categoria_receita
         categoria_despesa = values.categoria_despesa
-        
+
         if tipo_mov == 'receita' and categoria_despesa is not None:
             raise ValueError('Categoria despesa deve ser None para movimentações do tipo receita')
         if tipo_mov == 'despesa' and categoria_receita is not None:
-            raise ValueError('Categoria receita deve ser None para movimentação do tipo despesa')        
-    
+            raise ValueError('Categoria receita deve ser None para movimentação do tipo despesa')
+
         return values
-  
-  
+
+
 class MovimentacaoCreate(MovimentacaoBase):
     pass
 
@@ -42,4 +42,3 @@ class MovimentacaoResponse(BaseModel):
     categoria_despesa: Optional[CategoriaDespesaEnum] = None
     idmov: int
     id_user: int
-

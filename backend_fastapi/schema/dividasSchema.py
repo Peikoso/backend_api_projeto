@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from backend_fastapi.schema.Enums import SituacaoDividaEnum
+from backend_fastapi.schema.enums import SituacaoDividaEnum
 
 
 class DividasBase(BaseModel):

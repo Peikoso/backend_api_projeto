@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 
-from backend_fastapi.schema.Enums import ClassePatrimonioEnum
+from backend_fastapi.schema.enums import ClassePatrimonioEnum
 
 
 class PatrimonioBase(BaseModel):

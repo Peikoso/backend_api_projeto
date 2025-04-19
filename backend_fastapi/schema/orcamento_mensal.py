@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from backend_fastapi.schema.Enums import CategoriaDespesaEnum
+from backend_fastapi.schema.enums import CategoriaDespesaEnum
 
 
 class OrcamentoBase(BaseModel):
@@ -13,7 +13,7 @@ class OrcamentoBase(BaseModel):
 class OrcamentoCreate(OrcamentoBase):
     pass
 
-    
+
 class OrcamentoResponse(BaseModel):
     mes: int
     ano: int

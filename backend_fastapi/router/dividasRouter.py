@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[DividasResponse])
-async def get_dividas(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_dividas(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM dividas WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_dividas = result.fetchall()
@@ -21,7 +21,7 @@ async def get_dividas(db: AsyncSession = Depends(get_session), current_user = De
 
 
 @router.get('/{cod_divid}', response_model=DividasResponse)
-async def get_divida_by_cod_divid(cod_divid: int, db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_divida_by_cod_divid(cod_divid: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM dividas WHERE cod_divid = :cod_divid AND id_user = :id_user')
     result = await db.execute(query.bindparams(cod_divid=cod_divid, id_user=current_user.id_user))
     raw_divida = result.fetchone()

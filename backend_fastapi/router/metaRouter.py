@@ -12,22 +12,22 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[MetaResponse])
-async def get_metas(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_metas(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM meta WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_metas = result.fetchall()
-    
+
     return [MetaResponse.model_validate(meta._mapping) for meta in raw_metas]
 
 
 @router.get('/{id_meta}', response_model=MetaResponse)
-async def get_meta_by_id(id_meta: int, db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_meta_by_id(id_meta: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM meta WHERE id_meta = :id_meta AND id_user = :id_user')
     result = await db.execute(query.bindparams(id_meta=id_meta, id_user=current_user.id_user))
     raw_meta = result.fetchone()
     if not raw_meta:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Meta não encontrada')
-    
+
     return MetaResponse.model_validate(raw_meta._mapping)
 
 

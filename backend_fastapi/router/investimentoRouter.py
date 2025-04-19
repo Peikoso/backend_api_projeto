@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[InvestimentoResponse])
-async def get_investimentos(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_investimentos(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM investimento WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_investimentos = result.fetchall()
@@ -21,7 +21,7 @@ async def get_investimentos(db: AsyncSession = Depends(get_session), current_use
 
 
 @router.get('/{cod}', response_model=InvestimentoResponse)
-async def get_investimento_by_id(cod: int, db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_investimento_by_id(cod: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM investimento WHERE cod = :cod AND id_user = :id_user')
     result = await db.execute(query.bindparams(cod=cod, id_user=current_user.id_user))
     raw_investimento = result.fetchone()

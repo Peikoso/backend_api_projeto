@@ -57,15 +57,16 @@ class ClassePatrimonioEnum(str, Enum):
     propriedade_intelectual = 'propriedade_intelectual'
     outros = 'outros'
 
+
 # Enum para Classe da Meta
 class CategoriaMetaEnum(str, Enum):
-    VIAGEM = "viagem"
-    CASA = "casa"
-    CARRO = "carro"
-    EDUCACAO = "educacao"
-    APOSENTADORIA = "aposentadoria"
-    FUNDO_DE_EMERGENCIA = "fundo_de_emergencia"
-    ELETRONICO = "eletronico"
-    REFORMA = "reforma"
-    ABRIR_NEGOCIO = "abrir_negocio"
-    OUTROS = "outros"
+    VIAGEM = 'viagem'
+    CASA = 'casa'
+    CARRO = 'carro'
+    EDUCACAO = 'educacao'
+    APOSENTADORIA = 'aposentadoria'
+    FUNDO_DE_EMERGENCIA = 'fundo_de_emergencia'
+    ELETRONICO = 'eletronico'
+    REFORMA = 'reforma'
+    ABRIR_NEGOCIO = 'abrir_negocio'
+    OUTROS = 'outros'

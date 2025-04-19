@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from backend_fastapi.schema.Enums import CategoriaMetaEnum
+from backend_fastapi.schema.enums import CategoriaMetaEnum
 
 
 class MetaBase(BaseModel):
@@ -30,8 +30,8 @@ class MetaBase(BaseModel):
         if values.valor_reservado > values.valor:
             raise ValueError('O valor Reservado não pode exceder o valor da meta')
         return values
-    
-    
+
+
 class MetaCreate(MetaBase):
     pass
 
