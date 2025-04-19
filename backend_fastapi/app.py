@@ -9,7 +9,10 @@ from backend_fastapi.router.metaRouter import router as meta_router
 from backend_fastapi.router.movimentacaoRouter import router as movimentacao_router
 from backend_fastapi.router.orcamentoMensalRouter import router as orcamentoMensal_router
 from backend_fastapi.router.patrimonioRouter import router as patrimonio_router
+from backend_fastapi.router.resumoFinanceiroRouter import router as resumo_financeiro_router
 from backend_fastapi.router.usuarioRouter import router as usuario_router
+from backend_fastapi.router.gastoRouter import router as gasto_router
+
 
 app = FastAPI()
 
@@ -34,6 +37,8 @@ app.include_router(patrimonio_router, prefix='/Patrimonio', tags=['Patrimonio'])
 app.include_router(divida_router, prefix='/Dividas', tags={'Dividas'})
 app.include_router(orcamentoMensal_router, prefix='/OrcamentoMensal', tags=['Orcamento Mensal'])
 app.include_router(movimentacao_router, prefix='/Movimentacao', tags=['Movimetacao'])
+app.include_router(resumo_financeiro_router, prefix='/ResumoFinanceiro', tags=['Resumo Financeiro'])
+app.include_router(gasto_router, prefix='/Gasto', tags=['Gasto'])
 
 
 @app.get('/', status_code=HTTPStatus.OK)

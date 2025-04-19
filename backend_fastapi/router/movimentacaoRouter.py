@@ -67,7 +67,8 @@ async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), 
             path=pdf_path, media_type='application/pdf', filename=pdf_path.name, headers={'Content-Disposition': f'inline; filename={pdf_path.name}'}
         )
 
-    return{'PDF não encontrado'}
+    return {'PDF não encontrado'}
+
 
 @router.post('/')
 async def create_movimentacao(
@@ -128,27 +129,31 @@ async def create_movimentacao(
 
 
 @router.put('/{idmov}', response_model=MovimentacaoResponse)
-async def update_movimentacao(movimentacao: MovimentacaoCreate, idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def update_movimentacao(
+    movimentacao: MovimentacaoCreate, idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+):
     query = text(
         """
         UPDATE movimentacao
-        SET valor = :valor, descricao = :descricao, mes = :mes, ano = :ano, 
-        tipo_mov = :tipo_mov, categoria_receita = :categoria_receita, 
+        SET valor = :valor, descricao = :descricao, mes = :mes, ano = :ano,
+        tipo_mov = :tipo_mov, categoria_receita = :categoria_receita,
         categoria_despesa = :categoria_despesa
         WHERE idmov = :idmov AND id_user = :id_user
         RETURNING *
         """
     )
 
-    query = query.bindparams(valor=movimentacao.valor,
-                             descricao=movimentacao.descricao,
-                             mes=movimentacao.mes,
-                             ano=movimentacao.ano,
-                             tipo_mov=movimentacao.tipo_mov,
-                             categoria_receita=movimentacao.categoria_receita,
-                             categoria_despesa=movimentacao.categoria_despesa,
-                             idmov=idmov,
-                             id_user=current_user.id_user)
+    query = query.bindparams(
+        valor=movimentacao.valor,
+        descricao=movimentacao.descricao,
+        mes=movimentacao.mes,
+        ano=movimentacao.ano,
+        tipo_mov=movimentacao.tipo_mov,
+        categoria_receita=movimentacao.categoria_receita,
+        categoria_despesa=movimentacao.categoria_despesa,
+        idmov=idmov,
+        id_user=current_user.id_user,
+    )
 
     result = await db.execute(query)
     raw_movimentacao = result.fetchone()
@@ -163,17 +168,17 @@ async def update_movimentacao(movimentacao: MovimentacaoCreate, idmov: int, db: 
 
 @router.put('/update_comprovante/{idmov}')
 async def update_movimentacao_file(
-    idmov: int, comprovante_pdf: Optional[UploadFile] = File(None), db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)
-    ):  
+    idmov: int, comprovante_pdf: Optional[UploadFile] = File(None), db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+):
     query = text('SELECT comprovante_pdf FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user')
-    
+
     result_select = await db.execute(query.bindparams(idmov=idmov, id_user=current_user.id_user))
     pdf_path = result_select.scalar()
-    
+
     if pdf_path:
         os.remove(pdf_path)
         pdf_path = None
-        
+
     if comprovante_pdf:
         if comprovante_pdf.content_type != 'application/pdf':
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='O arquivo não é um PDF.')
@@ -183,12 +188,11 @@ async def update_movimentacao_file(
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail=f'O arquivo é muito grande. O tamanho máximo permitido é {MAX_FILE_SIZE / (1024 * 1024)} MB.',
-            ) 
-        
-        pdf_filename = pdf_filename if 'pdf_filename' in locals() else 'default_filename.pdf'
+            )
+
+        pdf_filename = 'movimentacao'
         pdf_filename = f'{datetime.now().strftime("%Y%m%d%H%M%S%f")}_{pdf_filename}'
         pdf_path = os.path.join(UPLOAD_DIR, pdf_filename)
-
 
     query = text(
         """
@@ -199,40 +203,38 @@ async def update_movimentacao_file(
         """
     )
 
-    query = query.bindparams(comprovante_pdf=pdf_path,
-                             idmov=idmov,
-                             id_user=current_user.id_user)
-    
+    query = query.bindparams(comprovante_pdf=pdf_path, idmov=idmov, id_user=current_user.id_user)
+
     result_update = await db.execute(query)
     id_movimentacao = result_update.scalar()
-    
+
     if not id_movimentacao:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'Movimentacao com ID: {idmov} não encontrada')
-    
+
     await db.commit()
-    
+
     with open(pdf_path, 'wb') as f:
         shutil.copyfileobj(comprovante_pdf.file, f)
-    
+
     return {'Comprovante atualizado com sucesso'}
 
 
 @router.delete('/{idmov}')
-async def delete_movimentacao(idmov: int, db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def delete_movimentacao(idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT comprovante_pdf FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user')
     result_select = await db.execute(query.bindparams(idmov=idmov, id_user=current_user.id_user))
     pdf_path = result_select.scalar()
-        
+
     query = text('DELETE FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user RETURNING idmov')
     result = await db.execute(query.bindparams(idmov=idmov, id_user=current_user.id_user))
     deleted_idmov = result.scalar()
 
     if not deleted_idmov:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'Movimentação com ID: {idmov} não encontrada')
-    
+
     await db.commit()
-    
+
     if pdf_path:
         os.remove(pdf_path)
-        
+
     return {'message': f'Movimentacao com ID: {deleted_idmov} Deletada'}
