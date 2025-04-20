@@ -12,6 +12,8 @@ from backend_fastapi.router.orcamentoMensalRouter import router as orcamentoMens
 from backend_fastapi.router.patrimonioRouter import router as patrimonio_router
 from backend_fastapi.router.resumoFinanceiroRouter import router as resumo_financeiro_router
 from backend_fastapi.router.usuarioRouter import router as usuario_router
+from backend_fastapi.router.emailRouter import router as email_router
+
 
 app = FastAPI()
 
@@ -38,6 +40,7 @@ app.include_router(orcamentoMensal_router, prefix='/OrcamentoMensal', tags=['Orc
 app.include_router(movimentacao_router, prefix='/Movimentacao', tags=['Movimetacao'])
 app.include_router(resumo_financeiro_router, prefix='/ResumoFinanceiro', tags=['Resumo Financeiro'])
 app.include_router(gasto_router, prefix='/Gasto', tags=['Gasto'])
+app.include_router(email_router, prefix='/EnviarEmail', tags=['Enviar Email'])
 
 
 @app.get('/', status_code=HTTPStatus.OK)
