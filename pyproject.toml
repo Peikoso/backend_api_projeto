@@ -1,9 +1,9 @@
 [project]
 name = "backend-fastapi"
 version = "0.1.0"
-description = ""
+description = "Projeto para faculdade "
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "João Martins",email = "joaommn1998@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "backend_fastapi", from = "src"}]
+packages = [{include = "backend_fastapi"}]
 
 
 [build-system]
