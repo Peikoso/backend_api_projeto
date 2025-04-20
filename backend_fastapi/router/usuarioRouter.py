@@ -115,3 +115,10 @@ async def login_for_access_token(
     access_token = create_access_token(data={'sub': usuario.login})
 
     return {'access_token': access_token, 'token_type': 'Bearer'}
+
+
+@router.post('/refresh_token', response_model=Token)
+async def refresh_access_token(current_user: UsuarioBase = Depends(get_current_user)):
+    access_token = create_access_token(data={'sub': current_user.login})
+
+    return {'access_token': access_token, 'token_type': 'Bearer'}
