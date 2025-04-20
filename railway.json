@@ -1,8 +1,0 @@
-{
-    "build": {
-      "command": "poetry install"
-    },
-    "start": {
-      "command": "poetry run task run"
-    }
-  }
