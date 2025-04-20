@@ -1,9 +1,10 @@
 import re
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class ContactForm(BaseModel):
-    nome: str 
+    nome: str
     email: EmailStr
     menssagem: str = Field(..., min_length=5)
 
