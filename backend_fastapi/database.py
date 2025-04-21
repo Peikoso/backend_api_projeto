@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv('.env.original')
+load_dotenv('.env')
 
 class Envs:
     DATABASE_URL = os.getenv('DATABASE_URL')
