@@ -90,7 +90,7 @@ async def create_movimentacao(
                 detail=f'O arquivo é muito grande. O tamanho máximo permitido é {MAX_FILE_SIZE / (1024 * 1024)} MB.',
             )
 
-        pdf_filename = 'movimentacao'
+        pdf_filename = 'movimentacao.pdf'
         pdf_filename = f'{datetime.now().strftime("%Y%m%d%H%M%S%f")}_{pdf_filename}'
         pdf_path = os.path.join(UPLOAD_DIR, pdf_filename)
 
@@ -190,7 +190,7 @@ async def update_movimentacao_file(
                 detail=f'O arquivo é muito grande. O tamanho máximo permitido é {MAX_FILE_SIZE / (1024 * 1024)} MB.',
             )
 
-        pdf_filename = 'movimentacao'
+        pdf_filename = 'movimentacao.pdf'
         pdf_filename = f'{datetime.now().strftime("%Y%m%d%H%M%S%f")}_{pdf_filename}'
         pdf_path = os.path.join(UPLOAD_DIR, pdf_filename)
 
