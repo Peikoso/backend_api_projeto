@@ -56,7 +56,7 @@ async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), 
     row = result.fetchone()
 
     if row is None or row[0] is None:
-        return {'PDF não encontrado'}
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='PDF não encontrado')
 
     comprovante_pdf = row[0]
 
@@ -67,7 +67,7 @@ async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), 
             path=pdf_path, media_type='application/pdf', filename=pdf_path.name, headers={'Content-Disposition': f'inline; filename={pdf_path.name}'}
         )
 
-    return {'PDF não encontrado'}
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='PDF não encontrado')
 
 
 @router.post('/')
@@ -213,8 +213,9 @@ async def update_movimentacao_file(
 
     await db.commit()
 
-    with open(pdf_path, 'wb') as f:
-        shutil.copyfileobj(comprovante_pdf.file, f)
+    if comprovante_pdf and pdf_path:
+        with open(pdf_path, 'wb') as f:
+            shutil.copyfileobj(comprovante_pdf.file, f)
 
     return {'Comprovante atualizado com sucesso'}
 
