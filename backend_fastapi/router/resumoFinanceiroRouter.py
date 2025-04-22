@@ -27,7 +27,7 @@ async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), curre
     return [resumoFinanceiroMensalResponse.model_validate(resumo._mapping) for resumo in raw_resumos]
 
 
-@router.get('/Mensal', response_model=resumoFinanceiroMensalResponse)
+@router.get('/Mensal/{mes}/{ano}', response_model=resumoFinanceiroMensalResponse)
 async def get_resumo_financeiro_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text(
         """

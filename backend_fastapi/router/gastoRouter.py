@@ -26,8 +26,8 @@ async def get_gasto_mensal_categoria(categ: CategoriaDespesaEnum, db: AsyncSessi
     return [GastoMensalResponse.model_validate(gasto._mapping) for gasto in raw_gastos]
 
 
-@router.get('/Mensal', response_model=list[GastoMensalResponse])
-async def get_gasto_mensal(ano: int, mes: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+@router.get('/Mensal/{mes}/{ano}', response_model=list[GastoMensalResponse])
+async def get_gasto_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text(
         """
         SELECT ano, mes, categoria_despesa, total_gasto, percentual
@@ -60,8 +60,8 @@ async def get_gasto_comparativo_categoria(
     return [GastoMensalComparativo.model_validate(gasto._mapping) for gasto in raw_gastos]
 
 
-@router.get('/Comparativo/Mensal', response_model=list[GastoMensalComparativo])
-async def get_gasto_comparativo_mensal(ano: int, mes: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+@router.get('/Comparativo/Mensal/{mes}/{ano}', response_model=list[GastoMensalComparativo])
+async def get_gasto_comparativo_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text(
         """
         SELECT ano, mes, categoria_despesa, orcamento_previsto, gasto_real, diferenca, percentual_gasto
