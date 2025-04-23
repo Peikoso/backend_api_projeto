@@ -70,7 +70,7 @@ async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), 
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='PDF não encontrado')
 
 
-@router.post('/')
+@router.post('/', include_in_schema=False)
 async def create_movimentacao(
     movimentacao: Json[MovimentacaoCreate],
     comprovante_pdf: Optional[UploadFile] = File(None),
