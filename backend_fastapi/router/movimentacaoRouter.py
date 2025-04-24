@@ -176,7 +176,8 @@ async def update_movimentacao_file(
     pdf_path = result_select.scalar()
 
     if pdf_path:
-        os.remove(pdf_path)
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
         pdf_path = None
 
     if comprovante_pdf:
