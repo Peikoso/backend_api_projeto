@@ -236,7 +236,7 @@ async def delete_movimentacao(idmov: int, db: AsyncSession = Depends(get_session
 
     await db.commit()
 
-    if pdf_path:
+    if pdf_path and os.path.exists(pdf_path):
         os.remove(pdf_path)
 
     return {'message': f'Movimentacao com ID: {deleted_idmov} Deletada'}
