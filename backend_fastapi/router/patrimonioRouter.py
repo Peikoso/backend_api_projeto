@@ -22,7 +22,7 @@ async def get_patrimonio(db: AsyncSession = Depends(get_session), current_user=D
 
 @router.get('/{idbem}', response_model=PatrimonioResponse)
 async def get_patrimonio_idbem(idbem: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
-    query = text('SELECT * FROM patrimonio WHERE idbem = :idbem')
+    query = text('SELECT * FROM patrimonio WHERE idbem = :idbem AND id_user = :id_user')
     result = await db.execute(query.bindparams(idbem=idbem, id_user=current_user.id_user))
     raw_patrimonio = result.fetchone()
 
