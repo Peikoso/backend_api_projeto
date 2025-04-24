@@ -58,6 +58,7 @@ async def create_meta(meta: MetaCreate, db: AsyncSession = Depends(get_session),
         HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a meta')
 
     await db.commit()
+    
     return {'message': f'Meta com ID: {id_meta} criada'}
 
 

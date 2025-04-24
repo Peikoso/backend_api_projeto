@@ -61,7 +61,7 @@ async def create_investimento(investimento: InvestimentoCreate, db: AsyncSession
 
     await db.commit()
 
-    return {'message': 'Investimento Criado', 'cod': result.scalar()}
+    return {'message': f'Investimento Criado cod: {cod}'}
 
 
 @router.put('/{cod}', response_model=InvestimentoResponse)
