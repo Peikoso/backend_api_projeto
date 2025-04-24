@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-
+from typing import Optional
 
 class resumoFinanceiroMensalResponse(BaseModel):
-    mes: int
-    ano: int
+    mes: Optional[int]
+    ano: Optional[int]
     total_movimentacoes: int
     total_receitas: float
     total_despesas: float
