@@ -1,6 +1,7 @@
 📦 Instalação e Execução
+
 1. Clone o repositório:
-  git clone https://github.com/seu-usuario/nome-do-repo.git
+  git clone https://github.com/Peikoso/backend_api_projeto.git
   cd nome-do-repo
 
 2.Instale as dependências:
