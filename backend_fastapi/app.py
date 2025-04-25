@@ -17,8 +17,7 @@ from backend_fastapi.router.usuarioRouter import router as usuario_router
 app = FastAPI()
 
 origins = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    'https://frontendvueprojeto-production.up.railway.app',
 ]
 
 app.add_middleware(
