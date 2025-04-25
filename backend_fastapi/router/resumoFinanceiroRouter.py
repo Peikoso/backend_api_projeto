@@ -18,6 +18,7 @@ async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), curre
         SELECT mes, ano, total_movimentacoes, total_receitas, total_despesas, saldo
         FROM resumo_financeiro_mensal
         WHERE id_user = :id_user
+        ORDER BY ano DESC, mes DESC
         """
     )
 
