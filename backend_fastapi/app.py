@@ -1,5 +1,7 @@
 from http import HTTPStatus
+import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,15 +16,17 @@ from backend_fastapi.router.patrimonioRouter import router as patrimonio_router
 from backend_fastapi.router.resumoFinanceiroRouter import router as resumo_financeiro_router
 from backend_fastapi.router.usuarioRouter import router as usuario_router
 
+
+load_dotenv()
+
+allowed_origin = os.getenv("ALLOWED_ORIGIN")
+
 app = FastAPI()
 
-origins = [
-    'https://frontendvueprojeto-production.up.railway.app',
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=allowed_origin,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
