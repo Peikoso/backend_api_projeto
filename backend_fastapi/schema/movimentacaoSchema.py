@@ -29,7 +29,7 @@ class MovimentacaoBase(BaseModel):
             raise ValueError('Categoria receita não deve ser None para movimentações do tipo receita')
         if tipo_mov == 'despesa' and categoria_despesa is None:
             raise ValueError('Categoria despesa não deve ser None para movimentações do tipo despesa')
-        
+
         return values
 
 

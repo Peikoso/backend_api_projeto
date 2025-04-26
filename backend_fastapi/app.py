@@ -1,10 +1,11 @@
-from http import HTTPStatus
 import os
+from http import HTTPStatus
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend_fastapi.router.adminRouter import router as admin_router
 from backend_fastapi.router.dividasRouter import router as divida_router
 from backend_fastapi.router.emailRouter import router as email_router
 from backend_fastapi.router.gastoRouter import router as gasto_router
@@ -16,10 +17,10 @@ from backend_fastapi.router.patrimonioRouter import router as patrimonio_router
 from backend_fastapi.router.resumoFinanceiroRouter import router as resumo_financeiro_router
 from backend_fastapi.router.usuarioRouter import router as usuario_router
 
-
 load_dotenv()
 
-allowed_origin = os.getenv("ALLOWED_ORIGIN")
+allowed_origin = os.getenv('ALLOWED_ORIGIN')
+
 
 app = FastAPI()
 
@@ -33,6 +34,7 @@ app.add_middleware(
 )
 
 
+app.include_router(admin_router, prefix='/Admin', tags=['Admin'])
 app.include_router(usuario_router, prefix='/Usuario', tags=['Usuario'])
 app.include_router(meta_router, prefix='/Meta', tags=['Meta'])
 app.include_router(investimento_router, prefix='/Investimento', tags=['Investimento'])

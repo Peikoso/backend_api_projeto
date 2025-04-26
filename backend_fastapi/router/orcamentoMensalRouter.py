@@ -13,11 +13,11 @@ router = APIRouter()
 
 
 @router.get('/All', response_model=list[OrcamentoResponse])
-async def get_orcamento_mensal_all(db: AsyncSession = Depends(get_session), current_user = Depends(get_current_user)):
+async def get_orcamento_mensal_all(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     query = text('SELECT * FROM orcamento_mensal WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_orcamentos = result.fetchall()
-    
+
     return [OrcamentoResponse.model_validate(orcamento._mapping) for orcamento in raw_orcamentos]
 
 

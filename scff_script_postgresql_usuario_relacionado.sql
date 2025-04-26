@@ -62,6 +62,30 @@ CREATE TYPE categoria_meta_enum AS ENUM (
     'outros'
 );
 
+-- Categoria
+CREATE TABLE categoria (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL UNIQUE
+);
+
+--Noticia
+CREATE TABLE noticia (
+    id SERIAL PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    autor VARCHAR(100) NOT NULL,
+    conteudo TEXT NOT NULL,
+    imagem TEXT,
+    categoria_id INTEGER NOT NULL REFERENCES categoria(id),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ADMIN
+CREATE TABLE user_admin (
+    id_admin SERIAL PRIMARY KEY,
+    admin_login VARCHAR(100) NOT NULL UNIQUE,
+    senha TEXT NOT NULL
+);
+
 -- Usuário
 CREATE TABLE usuario (
     id_user SERIAL PRIMARY KEY,
@@ -226,8 +250,64 @@ VALUES
 (70, 'Internet mensal',  4, 2025, 'despesa', NULL, 'moradia', 2),
 (50, 'Presente para amigo',  4, 2025, 'despesa', NULL, 'outros', 2);
 
+--Admin
+INSERT INTO user_admin (admin_login, senha) VALUES
+('admin1', '$argon2id$v=19$m=65536,t=3,p=4$fxBzbn0x72/GfoV/uqsUMA$eai9tFzhAsNOLwle3eMYEJ6UFp50Ju2MDX5CONNkZhI');
 
+-- Categorias
+INSERT INTO categoria (nome) VALUES
+('Investimentos'),
+('Mercado de Ações'),
+('Economia Nacional'),
+('Criptomoedas'),
+('Educação Financeira'),
+('Política Monetária');
 
+-- Noticias
+INSERT INTO noticia (titulo, autor, conteudo, imagem, categoria_id)
+VALUES
+(
+  'Selic é mantida em 10,75%: o que isso significa para seus investimentos?',
+  'João Elias',
+  '<p>O Comitê de Política Monetária decidiu manter a taxa Selic em 10,75% ao ano...</p><p>Isso impacta diretamente a renda fixa e o crédito.</p>',
+  NULL,
+  6
+),
+(
+  'Bolsa fecha em alta após anúncio de estímulo nos EUA',
+  'Maria Senna',
+  '<p>O índice Ibovespa fechou em alta de 1,2% nesta terça-feira...</p><p>Analistas apontam otimismo após medidas anunciadas pelo FED.</p>',
+  NULL,
+  2
+),
+(
+  'Bitcoin ultrapassa US$ 70 mil pela primeira vez em 2025',
+  'João Martins',
+  '<p>A criptomoeda mais conhecida do mundo atingiu uma nova máxima histórica...</p>',
+  NULL,
+  4
+),
+(
+  'Entenda o que são fundos imobiliários e como começar a investir',
+  'Camila Costa',
+  '<p>Fundos Imobiliários (FIIs) são uma excelente porta de entrada para quem deseja investir em imóveis...</p>',
+  NULL,
+  1
+),
+(
+  'Inflação desacelera em março e anima o mercado',
+  'Lucas Ribeiro',
+  '<p>O IPCA registrou uma alta de 0,21% em março, abaixo das expectativas...</p>',
+  NULL,
+  3
+),
+(
+  'Como montar uma reserva de emergência sólida em 2025',
+  'Ana Paula',
+  '<p>Especialistas recomendam que a reserva de emergência cubra de 6 a 12 meses de despesas...</p>',
+  NULL,
+  5
+);
 
 -- Auditoria
 CREATE TABLE auditoria_movimentacao (

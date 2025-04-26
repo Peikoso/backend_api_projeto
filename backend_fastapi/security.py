@@ -11,9 +11,11 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
+from backend_fastapi.schema.adminSchema import AdminUser
 from backend_fastapi.schema.usuarioSchema import UsuarioBase
 
 pwd_context = PasswordHash.recommended()
+oauth2_scheme_admin = OAuth2PasswordBearer(tokenUrl='/Admin/token')
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/Usuario/token')
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token', auto_error=False)
 
@@ -69,3 +71,33 @@ async def get_current_user(
     usuario = UsuarioBase.model_validate(raw_usuario._mapping)
 
     return usuario
+
+
+async def get_admin(
+    session: AsyncSession = Depends(get_session),
+    token: str = Depends(oauth2_scheme_admin),
+):
+    credentials_exception = HTTPException(
+        status_code=HTTPStatus.UNAUTHORIZED,
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
+    )
+
+    try:
+        payload = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        admin_login: str = payload.get('sub')
+        if not admin_login:
+            raise credentials_exception
+
+    except PyJWTError:
+        raise credentials_exception
+
+    result = await session.execute(text('SELECT * FROM user_admin WHERE admin_login = :admin_login').bindparams(admin_login=admin_login))
+    raw_admin = result.fetchone()
+
+    if not raw_admin:
+        raise credentials_exception
+
+    admin = AdminUser.model_validate(raw_admin._mapping)
+
+    return admin
