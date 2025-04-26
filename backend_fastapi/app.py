@@ -4,6 +4,7 @@ from http import HTTPStatus
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend_fastapi.router.adminRouter import router as admin_router
 from backend_fastapi.router.dividasRouter import router as divida_router
@@ -45,6 +46,8 @@ app.include_router(movimentacao_router, prefix='/Movimentacao', tags=['Movimetac
 app.include_router(resumo_financeiro_router, prefix='/ResumoFinanceiro', tags=['Resumo Financeiro'])
 app.include_router(gasto_router, prefix='/Gasto', tags=['Gasto'])
 app.include_router(email_router, prefix='/EnviarEmail', tags=['Enviar Email'])
+
+app.mount('/imagens', StaticFiles(directory='imagens'), name='imagens')
 
 
 @app.get('/', status_code=HTTPStatus.OK)

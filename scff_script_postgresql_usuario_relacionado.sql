@@ -68,16 +68,31 @@ CREATE TABLE categoria (
     nome VARCHAR(100) NOT NULL UNIQUE
 );
 
+-- Imagem
+CREATE TABLE imagem (
+    id SERIAL PRIMARY KEY,
+    imagem_url TEXT,
+	imagem_path TEXT
+);
+
 --Noticia
 CREATE TABLE noticia (
     id SERIAL PRIMARY KEY,
     titulo VARCHAR(255) NOT NULL,
     autor VARCHAR(100) NOT NULL,
     conteudo TEXT NOT NULL,
-    imagem TEXT,
-    categoria_id INTEGER NOT NULL REFERENCES categoria(id),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    imagem INTEGER,
+    categoria_id INTEGER NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_imagem
+        FOREIGN KEY (imagem)
+        REFERENCES imagem(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_categoria
+        FOREIGN KEY (categoria_id)
+        REFERENCES categoria(id)
 );
+
 
 -- ADMIN
 CREATE TABLE user_admin (

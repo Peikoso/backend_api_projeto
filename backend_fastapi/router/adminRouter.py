@@ -1,7 +1,11 @@
+import io
+import os
+from datetime import datetime
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +17,7 @@ from backend_fastapi.schema.adminSchema import (
     AdminUser,
     CategoriaCreate,
     CategoriaResponse,
+    ImagemResponse,
     NoticiaCreate,
     NoticiaResponse,
 )
@@ -20,6 +25,17 @@ from backend_fastapi.schema.usuarioSchema import Token
 from backend_fastapi.security import create_access_token, get_admin, get_password_hash, verify_password
 
 router = APIRouter()
+
+
+UPLOAD_DIR = 'imagens/'
+
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
+
+API_URL = os.getenv('ORIGIN')
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 @router.get('/Categoria', response_model=list[CategoriaResponse])
@@ -125,13 +141,13 @@ async def create_noticia(noticia: NoticiaCreate, db: AsyncSession = Depends(get_
 
     query = text(
         """
-    INSERT INTO noticia (titulo, autor, conteudo, imagem, categoria_id)
-    VALUES (:titulo, :autor, :conteudo, :imagem, :categoria_id)
+    INSERT INTO noticia (titulo, autor, conteudo, imagem_id, categoria_id)
+    VALUES (:titulo, :autor, :conteudo, :imagem_id, :categoria_id)
     RETURNING id
     """
     )
 
-    query = query.bindparams(titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem=None, categoria_id=noticia.categoria_id)
+    query = query.bindparams(titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem_id=None, categoria_id=noticia.categoria_id)
 
     result = await db.execute(query)
     await db.commit()
@@ -157,7 +173,7 @@ async def update_noticia(id: int, noticia: NoticiaCreate, db: AsyncSession = Dep
     )
 
     query = query.bindparams(
-        id=id, titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem=None, categoria_id=noticia.categoria_id
+        id=id, titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem_id=None, categoria_id=noticia.categoria_id
     )
 
     result = await db.execute(query)
@@ -183,6 +199,89 @@ async def delete_noticia(id: int, db: AsyncSession = Depends(get_session), admin
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'Notícia ID: {id} não encontrada')
 
     return {'Message': 'Notícia deletada com sucesso', 'id': deleted_id}
+
+
+@router.get('/Imagem', response_model=list[ImagemResponse])
+async def get_imagens(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+    query = text('SELECT id, imagem_url FROM imagem')
+    result = await db.execute(query)
+    raw_imagens = result.fetchall()
+
+    return [ImagemResponse.model_validate(imagem._mapping) for imagem in raw_imagens]
+
+
+@router.get('/Imagem/{id}', response_model=ImagemResponse)
+async def get_imagem(id: int, db: AsyncSession = Depends(get_session)):
+    query = text('SELECT id, imagem_url FROM imagem WHERE id = :id')
+    result = await db.execute(query.bindparams(id=id))
+    raw_imagem = result.fetchone()
+
+    if not raw_imagem:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Imagem não encontrada'))
+
+    return ImagemResponse.model_validate(raw_imagem._mapping)
+
+
+@router.post('/Imagem')
+async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+    file_ext = os.path.splitext(imagem.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail='Tipo de imagem não suportado.')
+
+    contents = await imagem.read()
+
+    try:
+        imagem_open = Image.open(io.BytesIO(contents))
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail='Arquivo enviado não é uma imagem válida.')
+
+    resized_imagem = imagem_open.resize((800, 500))
+
+    imagem_filename = f'imagem{file_ext}'
+    imagem_filename = f'{datetime.now().strftime("%Y%m%d%H%M%S%f")}_{imagem_filename}'
+    save_path = os.path.join(UPLOAD_DIR, imagem_filename)
+
+    resized_imagem.save(save_path)
+
+    imagem_path = f'imagens/{imagem_filename}'
+    imagem_url = f'{API_URL}{imagem_path}'
+
+    query = text(
+        """
+    INSERT INTO imagem (imagem_url, imagem_path)
+    VALUES (:imagem_url, :imagem_path)
+    RETURNING id
+    """
+    )
+
+    result = await db.execute(query.bindparams(imagem_path=imagem_path, imagem_url=imagem_url))
+    id_imagem = result.scalar()
+
+    if not id_imagem:
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error a salvar imagem')
+
+    await db.commit()
+
+    return {'message': 'Imagem criado com sucesso'}
+
+
+@router.delete('/Imagem/{id}')
+async def delete_imagem(id: int, db: AsyncSession = Depends(get_session)):
+    imagem_path = await db.execute(text('SELECT imagem_path FROM imagem WHERE id = :id').bindparams(id=id))
+    imagem_path = imagem_path.scalar()
+    query = text('DELETE FROM imagem WHERE id = :id RETURNING id')
+    result = await db.execute(query.bindparams(id=id))
+    deleted_id = result.scalar()
+
+    if not deleted_id:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Imagem não encontrada'))
+
+    if imagem_path and os.path.exists(imagem_path):
+        os.remove(imagem_path)
+
+    await db.commit()
+
+    return {'message': 'Imagem deletada'}
 
 
 @router.get('/', response_model=list[AdminResponse])

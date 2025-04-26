@@ -26,13 +26,9 @@ class NoticiaCreate(BaseModel):
 
 
 class NoticiaResponse(NoticiaCreate):
-    imagem: Optional[str]
+    imagem_id: Optional[int]
     criado_em: datetime
     id: int
-
-
-class Imagem(BaseModel):
-    imagem: Optional[str]
 
 
 class CategoriaCreate(BaseModel):
@@ -40,4 +36,12 @@ class CategoriaCreate(BaseModel):
 
 
 class CategoriaResponse(CategoriaCreate):
+    id: int
+
+
+class ImagemCreate(BaseModel):
+    imagem_url: str
+
+
+class ImagemResponse(ImagemCreate):
     id: int
