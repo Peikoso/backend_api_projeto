@@ -148,13 +148,15 @@ async def create_noticia(noticia: NoticiaCreate, db: AsyncSession = Depends(get_
         """
         )
 
-        query = query.bindparams(titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem=noticia.imagem, categoria_id=noticia.categoria_id)
+        query = query.bindparams(
+            titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem=noticia.imagem, categoria_id=noticia.categoria_id
+        )
 
         result = await db.execute(query)
         await db.commit()
 
         return {'Message': 'Noticia criado', 'id': result.scalar()}
-    
+
     except IntegrityError:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Imagem nao encontrada')
 
@@ -194,6 +196,7 @@ async def update_noticia(id: int, noticia: NoticiaCreate, db: AsyncSession = Dep
     except IntegrityError:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Imagem nao encontrada')
 
+
 @router.delete('/Noticia/{id}')
 async def delete_noticia(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
     query = text('DELETE FROM noticia WHERE id = :id RETURNING id')
@@ -230,7 +233,7 @@ async def get_imagem(id: int, db: AsyncSession = Depends(get_session)):
 
 
 @router.post('/Imagem')
-async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_session)):
+async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
     file_ext = os.path.splitext(imagem.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail='Tipo de imagem não suportado.')
