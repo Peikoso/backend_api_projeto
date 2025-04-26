@@ -20,13 +20,13 @@ class AdminUser(AdminCreate):
 
 class NoticiaCreate(BaseModel):
     titulo: str
+    imagem: Optional[int]
     autor: str
     conteudo: str
     categoria_id: int
 
 
 class NoticiaResponse(NoticiaCreate):
-    imagem_id: Optional[int]
     criado_em: datetime
     id: int
 

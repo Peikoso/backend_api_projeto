@@ -133,59 +133,66 @@ async def get_noticia(db: AsyncSession = Depends(get_session)):
 
 @router.post('/Noticia')
 async def create_noticia(noticia: NoticiaCreate, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
-    categoria = await db.execute(text('SELECT * FROM categoria WHERE id = :id').bindparams(id=noticia.categoria_id))
-    raw_categoria = categoria.fetchone()
+    try:
+        categoria = await db.execute(text('SELECT * FROM categoria WHERE id = :id').bindparams(id=noticia.categoria_id))
+        raw_categoria = categoria.fetchone()
 
-    if not raw_categoria:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Categoria não encontrada'))
+        if not raw_categoria:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Categoria não encontrada'))
 
-    query = text(
+        query = text(
+            """
+        INSERT INTO noticia (titulo, autor, conteudo, imagem, categoria_id)
+        VALUES (:titulo, :autor, :conteudo, :imagem, :categoria_id)
+        RETURNING id
         """
-    INSERT INTO noticia (titulo, autor, conteudo, imagem_id, categoria_id)
-    VALUES (:titulo, :autor, :conteudo, :imagem_id, :categoria_id)
-    RETURNING id
-    """
-    )
+        )
 
-    query = query.bindparams(titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem_id=None, categoria_id=noticia.categoria_id)
+        query = query.bindparams(titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem=noticia.imagem, categoria_id=noticia.categoria_id)
 
-    result = await db.execute(query)
-    await db.commit()
+        result = await db.execute(query)
+        await db.commit()
 
-    return {'Message': 'Noticia criado', 'id': result.scalar()}
+        return {'Message': 'Noticia criado', 'id': result.scalar()}
+    
+    except IntegrityError:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Imagem nao encontrada')
 
 
 @router.put('/Noticia/{id}')
 async def update_noticia(id: int, noticia: NoticiaCreate, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
-    categoria = await db.execute(text('SELECT * FROM categoria WHERE id = :id').bindparams(id=noticia.categoria_id))
-    raw_categoria = categoria.fetchone()
+    try:
+        categoria = await db.execute(text('SELECT * FROM categoria WHERE id = :id').bindparams(id=noticia.categoria_id))
+        raw_categoria = categoria.fetchone()
 
-    if not raw_categoria:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Categoria não encontrada'))
+        if not raw_categoria:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Categoria não encontrada'))
 
-    query = text(
-        """
-        UPDATE noticia
-        SET titulo = :titulo, autor = :autor, conteudo = :conteudo, imagem = :imagem, categoria_id = :categoria_id
-        WHERE id = :id
-        RETURNING id
-        """
-    )
+        query = text(
+            """
+            UPDATE noticia
+            SET titulo = :titulo, autor = :autor, conteudo = :conteudo, imagem = :imagem, categoria_id = :categoria_id
+            WHERE id = :id
+            RETURNING id
+            """
+        )
 
-    query = query.bindparams(
-        id=id, titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem_id=None, categoria_id=noticia.categoria_id
-    )
+        query = query.bindparams(
+            id=id, titulo=noticia.titulo, autor=noticia.autor, conteudo=noticia.conteudo, imagem=noticia.imagem, categoria_id=noticia.categoria_id
+        )
 
-    result = await db.execute(query)
-    await db.commit()
+        result = await db.execute(query)
+        await db.commit()
 
-    updated_id = result.scalar()
+        updated_id = result.scalar()
 
-    if updated_id is None:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'Notícia ID: {id} não encontrada')
+        if updated_id is None:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f'Notícia ID: {id} não encontrada')
 
-    return {'Message': 'Notícia atualizada com sucesso', 'id': updated_id}
+        return {'Message': 'Notícia atualizada com sucesso', 'id': updated_id}
 
+    except IntegrityError:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Imagem nao encontrada')
 
 @router.delete('/Noticia/{id}')
 async def delete_noticia(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
@@ -223,7 +230,7 @@ async def get_imagem(id: int, db: AsyncSession = Depends(get_session)):
 
 
 @router.post('/Imagem')
-async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_session)):
     file_ext = os.path.splitext(imagem.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail='Tipo de imagem não suportado.')
@@ -266,7 +273,7 @@ async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_sessi
 
 
 @router.delete('/Imagem/{id}')
-async def delete_imagem(id: int, db: AsyncSession = Depends(get_session)):
+async def delete_imagem(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
     imagem_path = await db.execute(text('SELECT imagem_path FROM imagem WHERE id = :id').bindparams(id=id))
     imagem_path = imagem_path.scalar()
     query = text('DELETE FROM imagem WHERE id = :id RETURNING id')
