@@ -43,7 +43,7 @@ async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
 
     except IntegrityError as e:
         if 'usuario_login_key' in str(e.orig) or 'usuario_email_key' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Este login ou e-mail já está em uso. Escolha um diferente.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Este login ou e-mail já está em uso. Escolha um diferente.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
@@ -72,7 +72,7 @@ async def update_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
 
     except IntegrityError as e:
         if 'usuario_login_key' in str(e.orig) or 'usuario_email_key' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Este login ou e-mail já está em uso. Escolha um diferente.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Este login ou e-mail já está em uso. Escolha um diferente.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 

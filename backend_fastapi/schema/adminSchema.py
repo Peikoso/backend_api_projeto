@@ -1,12 +1,17 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class AdminResponse(BaseModel):
+    admin_login: str
+    id_admin: int
 
 
 class AdminCreate(BaseModel):
-    admin_login: str
-    senha: str
+    admin_login: str = Field(..., min_length=3)
+    senha: str = Field(..., min_length=3)
 
 
 class AdminUser(AdminCreate):

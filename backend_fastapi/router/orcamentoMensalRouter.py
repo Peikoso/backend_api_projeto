@@ -75,7 +75,7 @@ async def create_orcamentoMensal(orcamentoMensal: OrcamentoCreate, db: AsyncSess
 
     except IntegrityError as e:
         if 'unique_orcamento_usuario_mes_categoria' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Já existe um orçamento mensal para este mês, ano e categoria.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Já existe um orçamento mensal para este mês, ano e categoria.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
@@ -115,7 +115,7 @@ async def update_orcamentoMensal(
 
     except IntegrityError as e:
         if 'unique_orcamento_usuario_mes_categoria' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Já existe um orçamento mensal para este mês, ano e categoria.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Já existe um orçamento mensal para este mês, ano e categoria.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 

@@ -7,7 +7,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
-from backend_fastapi.schema.adminSchema import AdminCreate, AdminUser, CategoriaCreate, CategoriaResponse, NoticiaCreate, NoticiaResponse
+from backend_fastapi.schema.adminSchema import (
+    AdminCreate,
+    AdminResponse,
+    AdminUser,
+    CategoriaCreate,
+    CategoriaResponse,
+    NoticiaCreate,
+    NoticiaResponse,
+)
 from backend_fastapi.schema.usuarioSchema import Token
 from backend_fastapi.security import create_access_token, get_admin, get_password_hash, verify_password
 
@@ -15,7 +23,7 @@ router = APIRouter()
 
 
 @router.get('/Categoria', response_model=list[CategoriaResponse])
-async def get_categorias(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def get_categorias(db: AsyncSession = Depends(get_session)):
     query = text('SELECT * FROM categoria')
     result = await db.execute(query)
 
@@ -44,7 +52,7 @@ async def post_categoria(categoria: CategoriaCreate, db: AsyncSession = Depends(
 
     except IntegrityError as e:
         if 'categoria_nome_key' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Esta categoria já existe. Escolha um diferente.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Esta categoria já existe. Escolha um diferente.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
@@ -72,7 +80,7 @@ async def update_categoria(id: int, categoria: CategoriaCreate, db: AsyncSession
 
     except IntegrityError as e:
         if 'categoria_nome_key' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Esta categoria já existe. Escolha um nome diferente.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Esta categoria já existe. Escolha um nome diferente.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
@@ -92,32 +100,19 @@ async def delete_categoria(id: int, db: AsyncSession = Depends(get_session), adm
         return {'Message': 'Categoria deletada com sucesso', 'id': deleted_id}
     except IntegrityError as e:
         if 'noticia_categoria_id_fkey' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Não pode deletar a categoria de uma noticia existente')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Não pode deletar a categoria de uma noticia existente')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
 
 @router.get('/Noticia', response_model=list[NoticiaResponse])
-async def get_noticia(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def get_noticia(db: AsyncSession = Depends(get_session)):
     query = text('SELECT * FROM noticia')
     result = await db.execute(query)
 
     raw_noticias = result.fetchall()
 
     return [NoticiaResponse.model_validate(noticia._mapping) for noticia in raw_noticias]
-
-
-@router.get('/Noticia/{id}', response_model=NoticiaResponse)
-async def get_noticia_by_id(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
-    query = text('SELECT * FROM noticia WHERE id = :id')
-    result = await db.execute(query.bindparams(id=id))
-
-    raw_noticia = result.fetchone()
-
-    if not raw_noticia:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=(f'Noticia ID: {id} não encontrada'))
-
-    return NoticiaResponse.model_validate(raw_noticia._mapping)
 
 
 @router.post('/Noticia')
@@ -190,7 +185,27 @@ async def delete_noticia(id: int, db: AsyncSession = Depends(get_session), admin
     return {'Message': 'Notícia deletada com sucesso', 'id': deleted_id}
 
 
-@router.post('/Cadastro', status_code=HTTPStatus.CREATED)
+@router.get('/', response_model=list[AdminResponse])
+async def get_admins(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+    query = text('SELECT admin_login, id_admin FROM user_admin')
+    result = await db.execute(query)
+
+    raw_admins = result.fetchall()
+
+    return [AdminResponse.model_validate(admin._mapping) for admin in raw_admins]
+
+
+@router.get('/me', response_model=AdminResponse)
+async def get_admin_me(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+    query = text('SELECT admin_login, id_admin FROM user_admin WHERE id_admin = :id_admin')
+    result = await db.execute(query.bindparams(id_admin=admin.id_admin))
+
+    raw_admin = result.fetchone()
+
+    return AdminResponse.model_validate(raw_admin._mapping)
+
+
+@router.post('/Cadastro')
 async def create_usuario(admin: AdminCreate, db: AsyncSession = Depends(get_session), token: str = Depends(get_admin)):
     try:
         query = text(
@@ -214,7 +229,7 @@ async def create_usuario(admin: AdminCreate, db: AsyncSession = Depends(get_sess
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
 
-@router.delete('/{id_admin}', status_code=HTTPStatus.OK)
+@router.delete('/{id_admin}')
 async def delete_admin(id_admin: int, db: AsyncSession = Depends(get_session), token: str = Depends(get_admin)):
     query = text('DELETE FROM user_admin WHERE id_admin = :id_admin RETURNING id_admin;')
     result = await db.execute(query.bindparams(id_admin=id_admin))
