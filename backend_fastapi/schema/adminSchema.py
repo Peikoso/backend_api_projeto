@@ -19,10 +19,10 @@ class AdminUser(AdminCreate):
 
 
 class NoticiaCreate(BaseModel):
-    titulo: str
+    titulo: str = Field(..., min_length=3)
     imagem: Optional[int]
-    autor: str
-    conteudo: str
+    autor: str = Field(..., min_length=3)
+    conteudo: str = Field(..., min_length=3)
     categoria_id: int
 
 
@@ -32,7 +32,7 @@ class NoticiaResponse(NoticiaCreate):
 
 
 class CategoriaCreate(BaseModel):
-    nome: str
+    nome: str = Field(..., min_length=3)
 
 
 class CategoriaResponse(CategoriaCreate):
