@@ -115,7 +115,7 @@ async def delete_categoria(id: int, db: AsyncSession = Depends(get_session), adm
 
         return {'Message': 'Categoria deletada com sucesso', 'id': deleted_id}
     except IntegrityError as e:
-        if 'noticia_categoria_id_fkey' in str(e.orig):
+        if 'ForeignKeyViolationError' in str(e.orig):
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Não pode deletar a categoria de uma noticia existente')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
