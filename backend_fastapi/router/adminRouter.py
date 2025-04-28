@@ -333,7 +333,7 @@ async def create_usuario(admin: AdminCreate, db: AsyncSession = Depends(get_sess
 
     except IntegrityError as e:
         if 'user_admin_admin_login_key' in str(e.orig):
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Este admin_login já está em uso. Escolha um diferente.')
+            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Este admin_login já está em uso. Escolha um diferente.')
 
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
 
