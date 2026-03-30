@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
@@ -6,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
 from backend_fastapi.schema.investimentoSchema import InvestimentoCreate, InvestimentoResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
 
 
 @router.get('/', response_model=list[InvestimentoResponse])
-async def get_investimentos(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_investimentos(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM investimento WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_investimentos = result.fetchall()
@@ -21,7 +23,7 @@ async def get_investimentos(db: AsyncSession = Depends(get_session), current_use
 
 
 @router.get('/{cod}', response_model=InvestimentoResponse)
-async def get_investimento_by_id(cod: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_investimento_by_id(cod: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM investimento WHERE cod = :cod AND id_user = :id_user')
     result = await db.execute(query.bindparams(cod=cod, id_user=current_user.id_user))
     raw_investimento = result.fetchone()
@@ -33,7 +35,7 @@ async def get_investimento_by_id(cod: int, db: AsyncSession = Depends(get_sessio
 
 
 @router.post('/', status_code=HTTPStatus.CREATED)
-async def create_investimento(investimento: InvestimentoCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def create_investimento(investimento: InvestimentoCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
     INSERT INTO investimento (categ, valorini, valorfim, datainicio, datafim, empresa, proventos, id_user)
@@ -57,7 +59,7 @@ async def create_investimento(investimento: InvestimentoCreate, db: AsyncSession
     cod = result.scalar()
 
     if not cod:
-        HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a patrimonio')
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a patrimonio')
 
     await db.commit()
 
@@ -66,7 +68,7 @@ async def create_investimento(investimento: InvestimentoCreate, db: AsyncSession
 
 @router.put('/{cod}', response_model=InvestimentoResponse)
 async def update_investimento(
-    cod: int, investimento: InvestimentoCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+    cod: int, investimento: InvestimentoCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]
 ):
     query = text(
         """
@@ -102,7 +104,7 @@ async def update_investimento(
 
 
 @router.delete('/{cod}')
-async def delete_investimento(cod: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def delete_investimento(cod: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('DELETE FROM investimento WHERE cod = :cod AND id_user = :id_user RETURNING cod')
     result = await db.execute(query.bindparams(cod=cod, id_user=current_user.id_user))
     deleted_cod = result.scalar()

@@ -1,18 +1,20 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
-from backend_fastapi.schema.resumoFinanceiroSchema import resumoFinanceiroMensalResponse, resumoFinanceiroOutrosResponse
+from backend_fastapi.schema.resumoFinanceiroSchema import ResumoFinanceiroMensalResponse, ResumoFinanceiroOutrosResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
 
 
-@router.get('/', response_model=list[resumoFinanceiroMensalResponse])
-async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+@router.get('/', response_model=list[ResumoFinanceiroMensalResponse])
+async def get_resumos_financeiros(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         SELECT mes, ano, total_movimentacoes, total_receitas, total_despesas, saldo
@@ -25,11 +27,11 @@ async def get_resumos_financeiros(db: AsyncSession = Depends(get_session), curre
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_resumos = result.fetchall()
 
-    return [resumoFinanceiroMensalResponse.model_validate(resumo._mapping) for resumo in raw_resumos]
+    return [ResumoFinanceiroMensalResponse.model_validate(resumo._mapping) for resumo in raw_resumos]
 
 
-@router.get('/Mensal/{mes}/{ano}', response_model=resumoFinanceiroMensalResponse)
-async def get_resumo_financeiro_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+@router.get('/Mensal/{mes}/{ano}', response_model=ResumoFinanceiroMensalResponse)
+async def get_resumo_financeiro_mensal(mes: int, ano: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         SELECT mes, ano, total_movimentacoes, total_receitas, total_despesas, saldo
@@ -44,11 +46,11 @@ async def get_resumo_financeiro_mensal(mes: int, ano: int, db: AsyncSession = De
     if not raw_resumo:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Resumo Financeiro Mensal para esse periodo não existe')
 
-    return resumoFinanceiroMensalResponse.model_validate(raw_resumo._mapping)
+    return ResumoFinanceiroMensalResponse.model_validate(raw_resumo._mapping)
 
 
-@router.get('/Outros', response_model=resumoFinanceiroOutrosResponse)
-async def get_resumo_financeiro_outros(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+@router.get('/Outros', response_model=ResumoFinanceiroOutrosResponse)
+async def get_resumo_financeiro_outros(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         SELECT progresso_medio_metas, total_patrimonio, total_investido_final, total_proventos, total_dividas
@@ -63,4 +65,4 @@ async def get_resumo_financeiro_outros(db: AsyncSession = Depends(get_session), 
     if not raw_resumo:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Resumo Financeiro Fixo para esse periodo não existe')
 
-    return resumoFinanceiroOutrosResponse.model_validate(raw_resumo._mapping)
+    return ResumoFinanceiroOutrosResponse.model_validate(raw_resumo._mapping)

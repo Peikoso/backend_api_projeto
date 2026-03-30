@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -14,7 +15,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=UsuarioResponse)
-async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_usuarios(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT id_user, nome, email, login FROM usuario WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_user = result.fetchone()
@@ -22,7 +23,7 @@ async def get_usuarios(db: AsyncSession = Depends(get_session), current_user=Dep
 
 
 @router.post('/Cadastro', status_code=HTTPStatus.CREATED)
-async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_session), token: str = Depends(optional_oauth2_scheme)):
+async def create_usuario(usuario: UsuarioCreate, db: Annotated[AsyncSession, Depends(get_session)], token: Annotated[str, Depends(optional_oauth2_scheme)]):
     if token:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail='Usuários autenticados não podem criar nova conta.')
 
@@ -49,7 +50,7 @@ async def create_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
 
 
 @router.put('/', response_model=UsuarioResponse)
-async def update_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def update_usuario(usuario: UsuarioCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     try:
         query = text(
             """
@@ -78,7 +79,7 @@ async def update_usuario(usuario: UsuarioCreate, db: AsyncSession = Depends(get_
 
 
 @router.delete('/', status_code=HTTPStatus.OK)
-async def delete_usuario(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def delete_usuario(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('DELETE FROM usuario WHERE id_user = :id_user RETURNING id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     deleted_id = result.scalar()
@@ -93,8 +94,8 @@ async def delete_usuario(db: AsyncSession = Depends(get_session), current_user=D
 
 @router.post('/token', response_model=Token)
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_session),
+    db: Annotated[AsyncSession, Depends(get_session)],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
     result = await db.execute(text('SELECT * FROM usuario WHERE login = :login').bindparams(login=form_data.username))
     raw_usuario = result.fetchone()
@@ -118,7 +119,7 @@ async def login_for_access_token(
 
 
 @router.post('/refresh_token', response_model=Token)
-async def refresh_access_token(current_user: UsuarioBase = Depends(get_current_user)):
+async def refresh_access_token(current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     access_token = create_access_token(data={'sub': current_user.login})
 
     return {'access_token': access_token, 'token_type': 'Bearer'}

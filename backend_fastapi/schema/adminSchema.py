@@ -20,7 +20,7 @@ class AdminUser(AdminCreate):
 
 class NoticiaCreate(BaseModel):
     titulo: str = Field(..., min_length=3)
-    imagem: Optional[int]
+    imagem: Optional[int] = None
     autor: str = Field(..., min_length=3)
     conteudo: str = Field(..., min_length=3)
     categoria_id: int

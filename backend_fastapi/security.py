@@ -1,3 +1,4 @@
+from typing import Annotated
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from zoneinfo import ZoneInfo
@@ -20,11 +21,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/Usuario/token')
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token', auto_error=False)
 
 
-def get_password_hash(password: str):
+def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str):
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
@@ -33,7 +34,7 @@ ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
     to_encode = data.copy()
 
     expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -44,9 +45,9 @@ def create_access_token(data: dict):
 
 
 async def get_current_user(
-    session: AsyncSession = Depends(get_session),
-    token: str = Depends(oauth2_scheme),
-):
+    session: Annotated[AsyncSession, Depends(get_session)],
+    token: Annotated[str, Depends(oauth2_scheme)],
+) -> UsuarioBase:
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
         detail='Could not validate credentials',
@@ -74,9 +75,9 @@ async def get_current_user(
 
 
 async def get_admin(
-    session: AsyncSession = Depends(get_session),
-    token: str = Depends(oauth2_scheme_admin),
-):
+    session: Annotated[AsyncSession, Depends(get_session)],
+    token: Annotated[str, Depends(oauth2_scheme_admin)],
+) -> AdminUser:
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
         detail='Could not validate credentials',

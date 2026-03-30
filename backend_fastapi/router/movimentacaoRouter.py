@@ -1,10 +1,10 @@
 import os
-import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
+import aiofiles
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import Json
@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
 from backend_fastapi.schema.movimentacaoSchema import MovimentacaoCreate, MovimentacaoResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
@@ -23,10 +24,12 @@ UPLOAD_DIR = 'comprovantes_pdfs/'
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
+QUERY_SELECT_COMPROVANTE = 'SELECT comprovante_pdf FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user'
+MIME_TYPE_PDF = 'application/pdf'
 
 
 @router.get('/', response_model=list[MovimentacaoResponse])
-async def get_movimentacoes(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_movimentacoes(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         'SELECT valor, descricao, mes, ano, tipo_mov, categoria_receita, categoria_despesa, idmov, id_user FROM movimentacao WHERE id_user = :id_user'
     )
@@ -37,7 +40,7 @@ async def get_movimentacoes(db: AsyncSession = Depends(get_session), current_use
 
 
 @router.get('/{idmov}', response_model=MovimentacaoResponse)
-async def get_movimentacao_by_id(idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_movimentacao_by_id(idmov: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM movimentacao WHERE id_user = :id_user AND idmov = :idmov')
     result = await db.execute(query.bindparams(id_user=current_user.id_user, idmov=idmov))
     raw_movimentacao = result.fetchone()
@@ -49,8 +52,8 @@ async def get_movimentacao_by_id(idmov: int, db: AsyncSession = Depends(get_sess
 
 
 @router.get('/download_comprovante/{idmov}')
-async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
-    query = text('SELECT comprovante_pdf FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user')
+async def get_pdf_downlaod(idmov: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
+    query = text(QUERY_SELECT_COMPROVANTE)
     result = await db.execute(query.bindparams(idmov=idmov, id_user=current_user.id_user))
 
     row = result.fetchone()
@@ -64,7 +67,7 @@ async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), 
 
     if pdf_path.exists():
         return FileResponse(
-            path=pdf_path, media_type='application/pdf', filename=pdf_path.name, headers={'Content-Disposition': f'inline; filename={pdf_path.name}'}
+            path=pdf_path, media_type=MIME_TYPE_PDF, filename=pdf_path.name, headers={'Content-Disposition': f'inline; filename={pdf_path.name}'}
         )
 
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='PDF não encontrado')
@@ -73,14 +76,14 @@ async def get_pdf_downlaod(idmov: int, db: AsyncSession = Depends(get_session), 
 @router.post('/', include_in_schema=False)
 async def create_movimentacao(
     movimentacao: Json[MovimentacaoCreate],
-    comprovante_pdf: Optional[UploadFile] = File(None),
-    db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user),
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[UsuarioBase, Depends(get_current_user)],
+    comprovante_pdf: Annotated[Optional[UploadFile], File(description='Comprovante em PDF')] = None,
 ):
     pdf_path = None
 
     if comprovante_pdf:
-        if comprovante_pdf.content_type != 'application/pdf':
+        if comprovante_pdf.content_type != MIME_TYPE_PDF:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='O arquivo não é um PDF.')
 
         file_size = comprovante_pdf.size
@@ -94,8 +97,9 @@ async def create_movimentacao(
         pdf_filename = f'{datetime.now().strftime("%Y%m%d%H%M%S%f")}_{pdf_filename}'
         pdf_path = os.path.join(UPLOAD_DIR, pdf_filename)
 
-        with open(pdf_path, 'wb') as f:
-            shutil.copyfileobj(comprovante_pdf.file, f)
+        async with aiofiles.open(pdf_path, 'wb') as f:
+            content = await comprovante_pdf.read()
+            await f.write(content)
 
     query = text(
         """
@@ -130,7 +134,7 @@ async def create_movimentacao(
 
 @router.put('/{idmov}', response_model=MovimentacaoResponse)
 async def update_movimentacao(
-    movimentacao: MovimentacaoCreate, idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+    movimentacao: MovimentacaoCreate, idmov: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]
 ):
     query = text(
         """
@@ -168,9 +172,9 @@ async def update_movimentacao(
 
 @router.put('/update_comprovante/{idmov}')
 async def update_movimentacao_file(
-    idmov: int, comprovante_pdf: Optional[UploadFile] = File(None), db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+    idmov: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)], comprovante_pdf: Annotated[Optional[UploadFile], File(description='Comprovante em PDF')] = None
 ):
-    query = text('SELECT comprovante_pdf FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user')
+    query = text(QUERY_SELECT_COMPROVANTE)
 
     result_select = await db.execute(query.bindparams(idmov=idmov, id_user=current_user.id_user))
     pdf_path = result_select.scalar()
@@ -181,7 +185,7 @@ async def update_movimentacao_file(
         pdf_path = None
 
     if comprovante_pdf:
-        if comprovante_pdf.content_type != 'application/pdf':
+        if comprovante_pdf.content_type != MIME_TYPE_PDF:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='O arquivo não é um PDF.')
 
         file_size = comprovante_pdf.size
@@ -215,15 +219,16 @@ async def update_movimentacao_file(
     await db.commit()
 
     if comprovante_pdf and pdf_path:
-        with open(pdf_path, 'wb') as f:
-            shutil.copyfileobj(comprovante_pdf.file, f)
+        async with aiofiles.open(pdf_path, 'wb') as f:
+            content = await comprovante_pdf.read()
+            await f.write(content)
 
     return {'Comprovante atualizado com sucesso'}
 
 
 @router.delete('/{idmov}')
-async def delete_movimentacao(idmov: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
-    query = text('SELECT comprovante_pdf FROM movimentacao WHERE idmov = :idmov AND id_user = :id_user')
+async def delete_movimentacao(idmov: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
+    query = text(QUERY_SELECT_COMPROVANTE)
     result_select = await db.execute(query.bindparams(idmov=idmov, id_user=current_user.id_user))
     pdf_path = result_select.scalar()
 

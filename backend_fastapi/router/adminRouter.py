@@ -2,6 +2,7 @@ import io
 import os
 from datetime import datetime
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
@@ -36,10 +37,12 @@ API_URL = os.getenv('ORIGIN')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
+DB_INTEGRITY_ERROR_MSG = 'Erro de integridade no banco de dados.'
+CATEGORIA_NOT_FOUND_MSG = 'Categoria não encontrada'
 
 
 @router.get('/Categoria', response_model=list[CategoriaResponse])
-async def get_categorias(db: AsyncSession = Depends(get_session)):
+async def get_categorias(db: Annotated[AsyncSession, Depends(get_session)]):
     query = text('SELECT * FROM categoria')
     result = await db.execute(query)
 
@@ -49,7 +52,7 @@ async def get_categorias(db: AsyncSession = Depends(get_session)):
 
 
 @router.post('/Categoria')
-async def post_categoria(categoria: CategoriaCreate, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def post_categoria(categoria: CategoriaCreate, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     try:
         query = text(
             """
@@ -70,11 +73,11 @@ async def post_categoria(categoria: CategoriaCreate, db: AsyncSession = Depends(
         if 'categoria_nome_key' in str(e.orig):
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Esta categoria já existe. Escolha um diferente.')
 
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=DB_INTEGRITY_ERROR_MSG)
 
 
 @router.put('/Categoria/{id}')
-async def update_categoria(id: int, categoria: CategoriaCreate, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def update_categoria(id: int, categoria: CategoriaCreate, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     try:
         query = text(
             """
@@ -90,7 +93,7 @@ async def update_categoria(id: int, categoria: CategoriaCreate, db: AsyncSession
         updated_id = result.scalar()
 
         if updated_id is None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Categoria não encontrada')
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=CATEGORIA_NOT_FOUND_MSG)
 
         return {'Message': 'Categoria atualizada com sucesso', 'id': updated_id}
 
@@ -98,11 +101,11 @@ async def update_categoria(id: int, categoria: CategoriaCreate, db: AsyncSession
         if 'categoria_nome_key' in str(e.orig):
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Esta categoria já existe. Escolha um nome diferente.')
 
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=DB_INTEGRITY_ERROR_MSG)
 
 
 @router.delete('/Categoria/{id}')
-async def delete_categoria(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def delete_categoria(id: int, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     try:
         query = text('DELETE FROM categoria WHERE id = :id RETURNING id')
         result = await db.execute(query.bindparams(id=id))
@@ -111,18 +114,18 @@ async def delete_categoria(id: int, db: AsyncSession = Depends(get_session), adm
         deleted_id = result.scalar()
 
         if deleted_id is None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Categoria não encontrada')
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=CATEGORIA_NOT_FOUND_MSG)
 
         return {'Message': 'Categoria deletada com sucesso', 'id': deleted_id}
     except IntegrityError as e:
         if 'ForeignKeyViolationError' in str(e.orig):
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Não pode deletar a categoria de uma noticia existente')
 
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=DB_INTEGRITY_ERROR_MSG)
 
 
 @router.get('/Noticia', response_model=list[NoticiaResponse])
-async def get_noticia(db: AsyncSession = Depends(get_session)):
+async def get_noticia(db: Annotated[AsyncSession, Depends(get_session)]):
     query = text('SELECT * FROM noticia')
     result = await db.execute(query)
 
@@ -132,13 +135,13 @@ async def get_noticia(db: AsyncSession = Depends(get_session)):
 
 
 @router.post('/Noticia')
-async def create_noticia(noticia: NoticiaCreate, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def create_noticia(noticia: NoticiaCreate, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     try:
         categoria = await db.execute(text('SELECT * FROM categoria WHERE id = :id').bindparams(id=noticia.categoria_id))
         raw_categoria = categoria.fetchone()
 
         if not raw_categoria:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Categoria não encontrada'))
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=CATEGORIA_NOT_FOUND_MSG)
 
         query = text(
             """
@@ -162,13 +165,13 @@ async def create_noticia(noticia: NoticiaCreate, db: AsyncSession = Depends(get_
 
 
 @router.put('/Noticia/{id}')
-async def update_noticia(id: int, noticia: NoticiaCreate, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def update_noticia(id: int, noticia: NoticiaCreate, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     try:
         categoria = await db.execute(text('SELECT * FROM categoria WHERE id = :id').bindparams(id=noticia.categoria_id))
         raw_categoria = categoria.fetchone()
 
         if not raw_categoria:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=('Categoria não encontrada'))
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=CATEGORIA_NOT_FOUND_MSG)
 
         query = text(
             """
@@ -198,7 +201,7 @@ async def update_noticia(id: int, noticia: NoticiaCreate, db: AsyncSession = Dep
 
 
 @router.delete('/Noticia/{id}')
-async def delete_noticia(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def delete_noticia(id: int, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     query = text('DELETE FROM noticia WHERE id = :id RETURNING id')
     result = await db.execute(query.bindparams(id=id))
     await db.commit()
@@ -212,7 +215,7 @@ async def delete_noticia(id: int, db: AsyncSession = Depends(get_session), admin
 
 
 @router.get('/Imagem', response_model=list[ImagemResponse])
-async def get_imagens(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def get_imagens(db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     query = text('SELECT id, imagem_url FROM imagem')
     result = await db.execute(query)
     raw_imagens = result.fetchall()
@@ -221,7 +224,7 @@ async def get_imagens(db: AsyncSession = Depends(get_session), admin=Depends(get
 
 
 @router.get('/Imagem/{id}', response_model=ImagemResponse)
-async def get_imagem(id: int, db: AsyncSession = Depends(get_session)):
+async def get_imagem(id: int, db: Annotated[AsyncSession, Depends(get_session)]):
     query = text('SELECT id, imagem_url FROM imagem WHERE id = :id')
     result = await db.execute(query.bindparams(id=id))
     raw_imagem = result.fetchone()
@@ -232,8 +235,8 @@ async def get_imagem(id: int, db: AsyncSession = Depends(get_session)):
     return ImagemResponse.model_validate(raw_imagem._mapping)
 
 
-@router.post('/Imagem')
-async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+@router.post('/Imagem', responses={400: {'description': 'Bad Request'}})
+async def create_imagem(imagem: UploadFile, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     file_ext = os.path.splitext(imagem.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail='Tipo de imagem não suportado.')
@@ -276,7 +279,7 @@ async def create_imagem(imagem: UploadFile, db: AsyncSession = Depends(get_sessi
 
 
 @router.delete('/Imagem/{id}')
-async def delete_imagem(id: int, db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def delete_imagem(id: int, db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     imagem_path = await db.execute(text('SELECT imagem_path FROM imagem WHERE id = :id').bindparams(id=id))
     imagem_path = imagem_path.scalar()
     query = text('DELETE FROM imagem WHERE id = :id RETURNING id')
@@ -295,7 +298,7 @@ async def delete_imagem(id: int, db: AsyncSession = Depends(get_session), admin=
 
 
 @router.get('/', response_model=list[AdminResponse])
-async def get_admins(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def get_admins(db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     query = text('SELECT admin_login, id_admin FROM user_admin')
     result = await db.execute(query)
 
@@ -305,7 +308,7 @@ async def get_admins(db: AsyncSession = Depends(get_session), admin=Depends(get_
 
 
 @router.get('/me', response_model=AdminResponse)
-async def get_admin_me(db: AsyncSession = Depends(get_session), admin=Depends(get_admin)):
+async def get_admin_me(db: Annotated[AsyncSession, Depends(get_session)], admin: Annotated[AdminUser, Depends(get_admin)]):
     query = text('SELECT admin_login, id_admin FROM user_admin WHERE id_admin = :id_admin')
     result = await db.execute(query.bindparams(id_admin=admin.id_admin))
 
@@ -315,7 +318,7 @@ async def get_admin_me(db: AsyncSession = Depends(get_session), admin=Depends(ge
 
 
 @router.post('/Cadastro')
-async def create_usuario(admin: AdminCreate, db: AsyncSession = Depends(get_session), token: str = Depends(get_admin)):
+async def create_usuario(admin: AdminCreate, db: Annotated[AsyncSession, Depends(get_session)], token: Annotated[str, Depends(get_admin)]):
     try:
         query = text(
             """
@@ -335,11 +338,11 @@ async def create_usuario(admin: AdminCreate, db: AsyncSession = Depends(get_sess
         if 'user_admin_admin_login_key' in str(e.orig):
             raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Este admin_login já está em uso. Escolha um diferente.')
 
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Erro de integridade no banco de dados.')
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=DB_INTEGRITY_ERROR_MSG)
 
 
 @router.delete('/{id_admin}')
-async def delete_admin(id_admin: int, db: AsyncSession = Depends(get_session), token: str = Depends(get_admin)):
+async def delete_admin(id_admin: int, db: Annotated[AsyncSession, Depends(get_session)], token: Annotated[str, Depends(get_admin)]):
     query = text('DELETE FROM user_admin WHERE id_admin = :id_admin RETURNING id_admin;')
     result = await db.execute(query.bindparams(id_admin=id_admin))
     deleted_id = result.scalar()
@@ -351,10 +354,10 @@ async def delete_admin(id_admin: int, db: AsyncSession = Depends(get_session), t
     return {'message': 'Admin deletado com sucesso', 'id_admin': deleted_id}
 
 
-@router.post('/token', response_model=Token)
+@router.post('/token', response_model=Token, responses={400: {'description': 'Bad Request'}})
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_session),
+    db: Annotated[AsyncSession, Depends(get_session)],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
     result = await db.execute(text('SELECT * FROM user_admin WHERE admin_login = :admin_login').bindparams(admin_login=form_data.username))
     raw_admin = result.fetchone()

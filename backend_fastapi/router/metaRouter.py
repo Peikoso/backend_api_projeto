@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
@@ -6,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
 from backend_fastapi.schema.metaSchema import MetaCreate, MetaResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
 
 
 @router.get('/', response_model=list[MetaResponse])
-async def get_metas(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_metas(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM meta WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_metas = result.fetchall()
@@ -21,7 +23,7 @@ async def get_metas(db: AsyncSession = Depends(get_session), current_user=Depend
 
 
 @router.get('/{id_meta}', response_model=MetaResponse)
-async def get_meta_by_id(id_meta: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_meta_by_id(id_meta: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM meta WHERE id_meta = :id_meta AND id_user = :id_user')
     result = await db.execute(query.bindparams(id_meta=id_meta, id_user=current_user.id_user))
     raw_meta = result.fetchone()
@@ -32,7 +34,7 @@ async def get_meta_by_id(id_meta: int, db: AsyncSession = Depends(get_session), 
 
 
 @router.post('/', status_code=HTTPStatus.CREATED)
-async def create_meta(meta: MetaCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def create_meta(meta: MetaCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         INSERT INTO meta (categ, descri, data_inicio, data_fim, valor, valor_reservado, id_user)
@@ -55,7 +57,7 @@ async def create_meta(meta: MetaCreate, db: AsyncSession = Depends(get_session),
     id_meta = result.scalar()
 
     if not id_meta:
-        HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a meta')
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a meta')
 
     await db.commit()
 
@@ -63,7 +65,7 @@ async def create_meta(meta: MetaCreate, db: AsyncSession = Depends(get_session),
 
 
 @router.put('/{id_meta}', response_model=MetaResponse)
-async def update_meta(id_meta: int, meta: MetaCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def update_meta(id_meta: int, meta: MetaCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         UPDATE meta
@@ -96,7 +98,7 @@ async def update_meta(id_meta: int, meta: MetaCreate, db: AsyncSession = Depends
 
 
 @router.delete('/{id_meta}')
-async def delete_meta(id_meta: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def delete_meta(id_meta: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('DELETE FROM meta WHERE id_meta = :id_meta AND id_user = :id_user RETURNING id_meta')
     result = await db.execute(query.bindparams(id_meta=id_meta, id_user=current_user.id_user))
     deleted_id = result.scalar()

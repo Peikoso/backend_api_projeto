@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
@@ -7,13 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
 from backend_fastapi.schema.orcamento_mensal import OrcamentoCreate, OrcamentoResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
 
 
 @router.get('/All', response_model=list[OrcamentoResponse])
-async def get_orcamento_mensal_all(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_orcamento_mensal_all(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM orcamento_mensal WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_orcamentos = result.fetchall()
@@ -22,11 +24,11 @@ async def get_orcamento_mensal_all(db: AsyncSession = Depends(get_session), curr
 
 
 @router.get('/', response_model=list[OrcamentoResponse])
-async def get_orcamentoMensal(
-    ano: int = Query(..., ge=2025, le=2100, description='Ano desejado'),
-    mes: int = Query(..., ge=1, le=12, description='Mês desejado (1 a 12)'),
-    db: AsyncSession = Depends(get_session),
-    current_user=Depends(get_current_user),
+async def get_orcamento_mensal(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[UsuarioBase, Depends(get_current_user)],
+    ano: Annotated[Optional[int], Query(ge=2025, le=2100, description='Ano desejado')] = None,
+    mes: Annotated[Optional[int], Query(ge=1, le=12, description='Mês desejado (1 a 12)')] = None,
 ):
     query = text('SELECT * FROM orcamento_mensal WHERE id_user = :id_user AND ano = :ano AND mes = :mes')
     result = await db.execute(query.bindparams(id_user=current_user.id_user, ano=ano, mes=mes))
@@ -36,7 +38,7 @@ async def get_orcamentoMensal(
 
 
 @router.get('/{id_orcamento}', response_model=OrcamentoResponse)
-async def get_orcamentoMensal_by_id(id_orcamento: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_orcamento_mensal_by_id(id_orcamento: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM orcamento_mensal WHERE id_orcamento = :id_orcamento AND id_user = :id_user')
     result = await db.execute(query.bindparams(id_orcamento=id_orcamento, id_user=current_user.id_user))
     raw_orcamento = result.fetchone()
@@ -48,7 +50,7 @@ async def get_orcamentoMensal_by_id(id_orcamento: int, db: AsyncSession = Depend
 
 
 @router.post('/')
-async def create_orcamentoMensal(orcamentoMensal: OrcamentoCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def create_orcamento_mensal(orcamento_mensal: OrcamentoCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     try:
         query = text(
             """
@@ -59,10 +61,10 @@ async def create_orcamentoMensal(orcamentoMensal: OrcamentoCreate, db: AsyncSess
         )
 
         query = query.bindparams(
-            mes=orcamentoMensal.mes,
-            ano=orcamentoMensal.ano,
-            categoria=orcamentoMensal.categoria,
-            valor_previsto=orcamentoMensal.valor_previsto,
+            mes=orcamento_mensal.mes,
+            ano=orcamento_mensal.ano,
+            categoria=orcamento_mensal.categoria,
+            valor_previsto=orcamento_mensal.valor_previsto,
             id_user=current_user.id_user,
         )
 
@@ -81,8 +83,8 @@ async def create_orcamentoMensal(orcamentoMensal: OrcamentoCreate, db: AsyncSess
 
 
 @router.put('/{id_orcamento}')
-async def update_orcamentoMensal(
-    id_orcamento: int, orcamentoMensal: OrcamentoCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+async def update_orcamento_mensal(
+    id_orcamento: int, orcamento_mensal: OrcamentoCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]
 ):
     try:
         query = text(
@@ -95,10 +97,10 @@ async def update_orcamentoMensal(
         )
 
         query = query.bindparams(
-            mes=orcamentoMensal.mes,
-            ano=orcamentoMensal.ano,
-            categoria=orcamentoMensal.categoria,
-            valor_previsto=orcamentoMensal.valor_previsto,
+            mes=orcamento_mensal.mes,
+            ano=orcamento_mensal.ano,
+            categoria=orcamento_mensal.categoria,
+            valor_previsto=orcamento_mensal.valor_previsto,
             id_user=current_user.id_user,
             id_orcamento=id_orcamento,
         )
@@ -121,7 +123,7 @@ async def update_orcamentoMensal(
 
 
 @router.delete('/{id_orcamento}')
-async def delete_orcamentoMensal(id_orcamento: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def delete_orcamento_mensal(id_orcamento: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('DELETE FROM orcamento_mensal WHERE id_orcamento = :id_orcamento AND id_user = :id_user RETURNING id_orcamento')
     result = await db.execute(query.bindparams(id_orcamento=id_orcamento, id_user=current_user.id_user))
     deleted_id_orcamento = result.scalar()

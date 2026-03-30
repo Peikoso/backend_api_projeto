@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend_fastapi.database import get_session
 from backend_fastapi.schema.enums import CategoriaDespesaEnum
 from backend_fastapi.schema.gastoMensalSchema import GastoMensalComparativo, GastoMensalResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
 
 
 @router.get('/Categoria', response_model=list[GastoMensalResponse])
-async def get_gasto_mensal_categoria(categ: CategoriaDespesaEnum, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_gasto_mensal_categoria(categ: CategoriaDespesaEnum, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         SELECT ano, mes, categoria_despesa, total_gasto, percentual
@@ -27,7 +30,7 @@ async def get_gasto_mensal_categoria(categ: CategoriaDespesaEnum, db: AsyncSessi
 
 
 @router.get('/Mensal/{mes}/{ano}', response_model=list[GastoMensalResponse])
-async def get_gasto_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_gasto_mensal(mes: int, ano: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         SELECT ano, mes, categoria_despesa, total_gasto, percentual
@@ -44,7 +47,7 @@ async def get_gasto_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_se
 
 @router.get('/Comparativo/Categoria', response_model=list[GastoMensalComparativo])
 async def get_gasto_comparativo_categoria(
-    categ: CategoriaDespesaEnum, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)
+    categ: CategoriaDespesaEnum, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]
 ):
     query = text(
         """
@@ -61,7 +64,7 @@ async def get_gasto_comparativo_categoria(
 
 
 @router.get('/Comparativo/Mensal/{mes}/{ano}', response_model=list[GastoMensalComparativo])
-async def get_gasto_comparativo_mensal(mes: int, ano: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_gasto_comparativo_mensal(mes: int, ano: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
         SELECT ano, mes, categoria_despesa, orcamento_previsto, gasto_real, diferenca, percentual_gasto

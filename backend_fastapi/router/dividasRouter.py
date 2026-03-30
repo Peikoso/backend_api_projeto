@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
@@ -6,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_fastapi.database import get_session
 from backend_fastapi.schema.dividasSchema import DividasCreate, DividasResponse
+from backend_fastapi.schema.usuarioSchema import UsuarioBase
 from backend_fastapi.security import get_current_user
 
 router = APIRouter()
 
 
 @router.get('/', response_model=list[DividasResponse])
-async def get_dividas(db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_dividas(db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM dividas WHERE id_user = :id_user')
     result = await db.execute(query.bindparams(id_user=current_user.id_user))
     raw_dividas = result.fetchall()
@@ -21,7 +23,7 @@ async def get_dividas(db: AsyncSession = Depends(get_session), current_user=Depe
 
 
 @router.get('/{cod_divid}', response_model=DividasResponse)
-async def get_divida_by_cod_divid(cod_divid: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_divida_by_cod_divid(cod_divid: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('SELECT * FROM dividas WHERE cod_divid = :cod_divid AND id_user = :id_user')
     result = await db.execute(query.bindparams(cod_divid=cod_divid, id_user=current_user.id_user))
     raw_divida = result.fetchone()
@@ -33,7 +35,7 @@ async def get_divida_by_cod_divid(cod_divid: int, db: AsyncSession = Depends(get
 
 
 @router.post('/')
-async def create_divida(divida: DividasCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def create_divida(divida: DividasCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
     INSERT INTO dividas (natureza, situacao, data_inicio, data_final, valor, id_user)
@@ -55,7 +57,7 @@ async def create_divida(divida: DividasCreate, db: AsyncSession = Depends(get_se
     cod_divid = result.scalar()
 
     if not cod_divid:
-        HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a divida')
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail='Error ao criar a divida')
 
     await db.commit()
 
@@ -63,7 +65,7 @@ async def create_divida(divida: DividasCreate, db: AsyncSession = Depends(get_se
 
 
 @router.put('/{cod_divid}')
-async def update_divida(cod_divid: int, divida: DividasCreate, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def update_divida(cod_divid: int, divida: DividasCreate, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text(
         """
     UPDATE dividas
@@ -95,7 +97,7 @@ async def update_divida(cod_divid: int, divida: DividasCreate, db: AsyncSession 
 
 
 @router.delete('/{cod_divid}')
-async def delete_divida(cod_divid: int, db: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def delete_divida(cod_divid: int, db: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[UsuarioBase, Depends(get_current_user)]):
     query = text('DELETE FROM dividas WHERE id_user = :id_user AND cod_divid = :cod_divid RETURNING cod_divid')
     result = await db.execute(query.bindparams(id_user=current_user.id_user, cod_divid=cod_divid))
     deleted_cod = result.scalar()
