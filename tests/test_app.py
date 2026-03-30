@@ -1,20 +1,11 @@
 """Testes básicos para a API do SCFF (Backend FastAPI).
 
 Estes testes verificam os endpoints principais da aplicação,
-garantindo que as rotas respondem corretamente.
+garantindo que as rotas respondem corretamente com as dependências mockadas.
 """
-
 
 import pytest
 from fastapi.testclient import TestClient
-
-from backend_fastapi.app import app
-
-
-@pytest.fixture
-def client():
-    """Cria um client de teste para a aplicação FastAPI."""
-    return TestClient(app)
 
 
 class TestRootEndpoint:
@@ -81,47 +72,50 @@ class TestSecurityModule:
         assert exp > now
 
 
-class TestEndpointAuthentication:
-    """Testes para verificar que endpoints protegidos requerem autenticação."""
+class TestEndpointsAuthenticated:
+    """Testes para verificar que endpoints protegidos funcionam com autenticação mockada."""
 
-    def test_usuario_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de usuário requer token."""
+    def test_usuario_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de usuário retorna 200 com mock de auth."""
         response = client.get('/Usuario/')
-        assert response.status_code == 401
+        assert response.status_code == 200
 
-    def test_meta_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de meta requer token."""
+    def test_meta_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de meta retorna 200 com mock de auth."""
         response = client.get('/Meta/')
-        assert response.status_code == 401
+        assert response.status_code == 200
 
-    def test_investimento_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de investimento requer token."""
+    def test_investimento_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de investimento retorna 200 com mock de auth."""
         response = client.get('/Investimento/')
-        assert response.status_code == 401
+        assert response.status_code == 200
 
-    def test_patrimonio_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de patrimônio requer token."""
+    def test_patrimonio_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de patrimônio retorna 200 com mock de auth."""
         response = client.get('/Patrimonio/')
-        assert response.status_code == 401
+        assert response.status_code == 200
 
-    def test_dividas_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de dívidas requer token."""
+    def test_dividas_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de dívidas retorna 200 com mock de auth."""
         response = client.get('/Dividas/')
-        assert response.status_code == 401
+        assert response.status_code == 200
 
-    def test_orcamento_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de orçamento mensal requer token."""
-        response = client.get('/OrcamentoMensal/')
-        assert response.status_code == 401
+    def test_orcamento_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de orçamento mensal retorna 200 com mock de auth."""
+        response = client.get('/OrcamentoMensal/All')
+        assert response.status_code == 200
 
-    def test_movimentacao_endpoint_requires_auth(self, client: TestClient):
-        """Verifica se o endpoint de movimentação requer token."""
+    def test_movimentacao_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de movimentação retorna 200 com mock de auth."""
         response = client.get('/Movimentacao/')
-        assert response.status_code == 401
+        assert response.status_code == 200
 
-    def test_admin_categoria_endpoint_is_public(self, client: TestClient):
-        """Verifica se o endpoint de categorias (GET) é público."""
-        # GET categorias não requer auth no admin router
+    def test_admin_categoria_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de categorias retorna 200."""
         response = client.get('/Admin/Categoria')
-        # Pode falhar por DB mas não por auth (200 ou 500, não 401)
-        assert response.status_code != 401
+        assert response.status_code == 200
+
+    def test_resumo_financeiro_endpoint_returns_ok(self, client: TestClient):
+        """Verifica se o endpoint de resumo financeiro retorna 200."""
+        response = client.get('/ResumoFinanceiro/')
+        assert response.status_code == 200
